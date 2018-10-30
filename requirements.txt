@@ -1,0 +1,3 @@
+glustercli
+openshift
+prometheus_client
