@@ -17,8 +17,8 @@ import urllib3
 #           'created': image['metadata']['creationTimestamp'],
 #         } for image in images['items'] if image.get('dockerImageLayers') for layer in image['dockerImageLayers']]
 
-VOLUME_SIZE = prometheus_client.Gauge('gluster_volume_size_bytes', 'Size of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
-VOLUME_FREE = prometheus_client.Gauge('gluster_volume_free_bytes', 'Free space of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
+# VOLUME_SIZE = prometheus_client.Gauge('gluster_volume_size_bytes', 'Size of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
+# VOLUME_FREE = prometheus_client.Gauge('gluster_volume_free_bytes', 'Free space of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 BRICKS_NUM = prometheus_client.Gauge('gluster_volume_bricks_num', 'Total number of bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 BRICKS_ONLINE = prometheus_client.Gauge('gluster_volume_bricks_online', 'Number of online bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 
@@ -33,8 +33,8 @@ def collect_gluster_metrics():
         pvc = pvcs.get(volume['name'], {})
         pvc_namespace = pvc.get('namespace', "")
         pvc_name = pvc.get('name', "")
-        VOLUME_SIZE.labels(volume['name'], pvc_namespace, pvc_name).set(sum([int(brick['size_total']) for brick in volume['bricks'][0::volume['replica']]]))
-        VOLUME_FREE.labels(volume['name'], pvc_namespace, pvc_name).set(sum([int(brick['size_free']) for brick in volume['bricks'][0::volume['replica']]]))
+        # VOLUME_SIZE.labels(volume['name'], pvc_namespace, pvc_name).set(sum([int(brick['size_total']) for brick in volume['bricks'][0::volume['replica']]]))
+        # VOLUME_FREE.labels(volume['name'], pvc_namespace, pvc_name).set(sum([int(brick['size_free']) for brick in volume['bricks'][0::volume['replica']]]))
         BRICKS_NUM.labels(volume['name'], pvc_namespace, pvc_name).set(volume['num_bricks'])
         BRICKS_ONLINE.labels(volume['name'], pvc_namespace, pvc_name).set(len([brick for brick in volume['bricks'] if brick['online']]))
 
