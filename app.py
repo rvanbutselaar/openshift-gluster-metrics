@@ -58,8 +58,12 @@ if __name__ == '__main__':
     while True:
         try:
             pvs = v1_persistent_volume.get().items
-            pvcs = {pv['spec']['glusterfs']['path']:{'namespace': pv['spec']['claimRef']['namespace'], 'name': pv['spec']['claimRef']['name']} for pv in pvs}
-            collect_gluster_metrics()
+            for pv in pvs:
+                if pv.spec.glusterfs:
+                    print(pv.metadata.name)
+                    print(pv.spec.glusterfs.path)
+                    pvcs = {pv['spec']['glusterfs']['path']:{'namespace': pv['spec']['claimRef']['namespace'], 'name': pv['spec']['claimRef']['name']}}
+                    collect_gluster_metrics()
         except Exception as e:
                 logging.exception(e)
         time.sleep(interval)
