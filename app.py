@@ -23,7 +23,8 @@ BRICKS_NUM = prometheus_client.Gauge('gluster_volume_bricks_num', 'Total number 
 BRICKS_ONLINE = prometheus_client.Gauge('gluster_volume_bricks_online', 'Number of online bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 
 def collect_gluster_metrics():
-    volume_status = gluster.cli.volume.status_detail()
+    print(pvcs)
+    volume_status = gluster.cli.volume.status_detail('vol_sbx-dev01_wal-edb-volume_967f7627-8562-11e9-abc4-fa163ee9b447')
     logging.info(f"Collecting gluster metrics, {len(volume_status)} gluster volumes, {len(pvcs)} pvcs")
     for volume in volume_status:
         # heal_info = gluster.cli.heal.info(volume['name'])
@@ -60,8 +61,8 @@ if __name__ == '__main__':
             pvs = v1_persistent_volume.get().items
             for pv in pvs:
                 if pv.spec.glusterfs:
-                    print(pv.metadata.name)
-                    print(pv.spec.glusterfs.path)
+                    # print(pv.metadata.name)
+                    # print(pv.spec.glusterfs.path)
                     pvcs = {pv['spec']['glusterfs']['path']:{'namespace': pv['spec']['claimRef']['namespace'], 'name': pv['spec']['claimRef']['name']}}
                     collect_gluster_metrics()
         except Exception as e:
