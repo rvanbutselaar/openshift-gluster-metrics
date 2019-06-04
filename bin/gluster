@@ -4,6 +4,10 @@ import os
 import sys
 import json
 import kubernetes
+import urllib3
+
+# Disable SSL warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+urllib3.disable_warnings()
 
 if 'KUBERNETES_PORT' in os.environ:
     kubernetes.config.load_incluster_config()
