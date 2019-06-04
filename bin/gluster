@@ -16,7 +16,7 @@ else:
 
 v1 = kubernetes.client.CoreV1Api()
 
-pods = v1.list_namespaced_pod('glusterfs', label_selector='glusterfs=storage-pod')
+pods = v1.list_namespaced_pod('glusterfs', label_selector='glusterfs=gluster01-pod')
 for pod in pods.items:
     ws_client = kubernetes.stream.stream(v1.connect_get_namespaced_pod_exec, pod.metadata.name, 'glusterfs',
                     command=['gluster'] + sys.argv[1:],
