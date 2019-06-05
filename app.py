@@ -8,6 +8,7 @@ import kubernetes
 import openshift.dynamic
 import prometheus_client
 import urllib3
+import timeout_decorator
 
 # [{
 #           'name': image['dockerImageReference'],
@@ -20,6 +21,7 @@ import urllib3
 BRICKS_NUM = prometheus_client.Gauge('gluster_volume_bricks_num', 'Total number of bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 BRICKS_ONLINE = prometheus_client.Gauge('gluster_volume_bricks_online', 'Number of online bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 
+@timeout_decorator.timeout(180)
 def collect_gluster_metrics():
     volume_status = gluster.cli.volume.status_detail()
     logging.info(f"Collecting gluster metrics, {len(volume_status)} gluster volumes, {len(pvcs)} pvcs")

@@ -21,7 +21,7 @@ for pod in pods.items:
     ws_client = kubernetes.stream.stream(v1.connect_get_namespaced_pod_exec, pod.metadata.name, 'glusterfs',
                     command=['gluster'] + sys.argv[1:],
                     stderr=True, stdin=False, stdout=True, tty=False, _preload_content=False)
-    ws_client.run_forever(timeout=60)
+    ws_client.run_forever(timeout=180)
 
     result = json.loads(ws_client.read_channel(kubernetes.stream.ws_client.ERROR_CHANNEL))
 
