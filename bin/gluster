@@ -20,7 +20,7 @@ pods = v1.list_namespaced_pod('glusterfs', label_selector='glusterfs=gluster01-p
 for pod in pods.items:
     ws_client = kubernetes.stream.stream(v1.connect_get_namespaced_pod_exec, pod.metadata.name, 'glusterfs',
                     command=['gluster'] + sys.argv[1:],
-                    stderr=True, stdin=False, stdout=True, tty=False, _preload_content=False)
+                    stderr=True, stdin=False, stdout=True, tty=False, _preload_content=False, _request_timeout=180)
     ws_client.run_forever(timeout=180)
 
     result = json.loads(ws_client.read_channel(kubernetes.stream.ws_client.ERROR_CHANNEL))
