@@ -8,7 +8,6 @@ import kubernetes
 import openshift.dynamic
 import prometheus_client
 import urllib3
-import timeout_decorator
 
 # [{
 #           'name': image['dockerImageReference'],
@@ -21,7 +20,6 @@ import timeout_decorator
 BRICKS_NUM = prometheus_client.Gauge('gluster_volume_bricks_num', 'Total number of bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 BRICKS_ONLINE = prometheus_client.Gauge('gluster_volume_bricks_online', 'Number of online bricks of Gluster volume', labelnames=['gluster_name', 'kubernetes_namespace', 'kubernetes_name'])
 
-@timeout_decorator.timeout(180)
 def collect_gluster_metrics():
     volume_status = gluster.cli.volume.status_detail()
     logging.info(f"Collecting gluster metrics, {len(volume_status)} gluster volumes, {len(pvcs)} pvcs")
@@ -56,10 +54,8 @@ if __name__ == '__main__':
     while True:
         try:
             pvs = v1_persistent_volume.get().items
-            for pv in pvs:
-                if pv.spec.glusterfs:
-                    pvcs = {pv['spec']['glusterfs']['path']:{'namespace': pv['spec']['claimRef']['namespace'], 'name': pv['spec']['claimRef']['name']}}
-                    collect_gluster_metrics()
+            pvcs = {pv['spec']['glusterfs']['path']:{'namespace': pv['spec']['claimRef']['namespace'], 'name': pv['spec']['claimRef']['name']} for pv in pvs if pv.spec.glusterfs}
+            collect_gluster_metrics()
         except Exception as e:
                 logging.exception(e)
         time.sleep(interval)
