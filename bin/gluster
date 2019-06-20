@@ -7,29 +7,60 @@ import json
 import kubernetes
 import urllib3
 
-# Disable SSL warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
-urllib3.disable_warnings()
+import signal
+import time
 
-if 'KUBERNETES_PORT' in os.environ:
-    kubernetes.config.load_incluster_config()
-else:
-    kubernetes.config.load_kube_config()
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-v1 = kubernetes.client.CoreV1Api()
+class Timeout():
+    """Timeout class using ALARM signal."""
+    class Timeout(Exception):
+        pass
 
-pods = v1.list_namespaced_pod('glusterfs', label_selector='glusterfs=gluster01-pod', timeout_seconds=30)
-for pod in pods.items:
-    ws_client = kubernetes.stream.stream(v1.connect_get_namespaced_pod_exec, pod.metadata.name, 'glusterfs',
-                    command=['gluster'] + sys.argv[1:],
-                    stderr=True, stdin=False, stdout=True, tty=False, _preload_content=False, _request_timeout=20)
-    ws_client.run_forever(timeout=20)
+    def __init__(self, sec):
+        self.sec = sec
 
-    try:
-        result = json.loads(ws_client.read_channel(kubernetes.stream.ws_client.ERROR_CHANNEL))
-        if result['status'] == 'Success':
-            print(ws_client.read_all())
-            break
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.raise_timeout)
+        signal.alarm(self.sec)
+
+    def __exit__(self, *args):
+        signal.alarm(0)    # disable alarm
+
+    def raise_timeout(self, *args):
+        raise Timeout.Timeout()
+
+try:
+    with Timeout(60):
+        # Disable SSL warnings: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+        urllib3.disable_warnings()
+
+        if 'KUBERNETES_PORT' in os.environ:
+            kubernetes.config.load_incluster_config()
         else:
-            print(ws_client.read_all(), file=sys.stderr)
-    except ValueError:  # includes simplejson.decoder.JSONDecodeError
-        logging.error(f"Decoding JSON has failed")
+            kubernetes.config.load_kube_config()
+
+        v1 = kubernetes.client.CoreV1Api()
+
+        logging.info(f"Retrieve GlusterFS Pods")
+        pods = v1.list_namespaced_pod('glusterfs', label_selector='glusterfs=gluster01-pod', timeout_seconds=30)
+
+        logging.info(f"Loop GlusterFS Pods")
+        for pod in pods.items:
+            ws_client = kubernetes.stream.stream(v1.connect_get_namespaced_pod_exec, pod.metadata.name, 'glusterfs',
+                            command=['gluster'] + sys.argv[1:],
+                            stderr=True, stdin=False, stdout=True, tty=False, _preload_content=False, _request_timeout=20)
+            ws_client.run_forever(timeout=20)
+
+            try:
+                result = json.loads(ws_client.read_channel(kubernetes.stream.ws_client.ERROR_CHANNEL))
+                if result['status'] == 'Success':
+                    print(ws_client.read_all())
+                    break
+                else:
+                    print(ws_client.read_all(), file=sys.stderr)
+            except ValueError:  # includes simplejson.decoder.JSONDecodeError
+                logging.error(f"Decoding JSON has failed")
+
+except Timeout.Timeout:
+    logging.error(f"Timeout")
